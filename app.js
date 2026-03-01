@@ -190,6 +190,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    window.updateBalanceAmount = function (id) {
+        const data = Store.getData();
+        const balance = data.availableBalances.find(b => b.id === id);
+        if (balance) {
+            const nextAmount = prompt(`Atualizar o saldo de ${balance.bank}:`, balance.amount);
+            if (nextAmount !== null) {
+                balance.amount = parseFloat(nextAmount);
+                Store.saveData(data);
+                refreshAll();
+            }
+        }
+    };
+
     window.deleteCard = function (id) {
         if (confirm('Apagar este cartão e suas despesas atreladas?')) {
             const data = Store.getData();
@@ -297,9 +310,11 @@ function renderAvailableBalances() {
             <tr>
                 <td><strong>${item.bank}</strong></td>
                 <td>${item.description}</td>
-                <td style="font-weight:600; color:var(--positive);">${Store.formatCurrency(item.amount)}</td>
+                <td style="font-weight:600; color:var(--positive);">
+                    <span style="cursor:pointer;" title="Editar Valor" onclick="updateBalanceAmount('${item.id}')">${Store.formatCurrency(item.amount)} <i class="fa-solid fa-pen" style="font-size:0.75em;"></i></span>
+                </td>
                 <td>
-                    <button class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.8rem;" onclick="deleteBalance('${item.id}')">
+                    <button class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.8rem;" onclick="deleteBalance('${item.id}')" title="Excluir">
                         <i class="fa-solid fa-trash"></i>
                     </button>
                 </td>
