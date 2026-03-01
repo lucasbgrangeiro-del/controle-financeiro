@@ -1,36 +1,94 @@
 /**
- * Local Storage Management (store.js)
- * Serves as the mock database for our application.
+ * Firebase Cloud Storage Management (store.js)
+ * Replaces the local storage with real-time Firebase syncing.
  */
 
-const Store = {
-    // Default Empty State (V2)
-    _defaultState: {
-        availableBalances: [], // [{ id, description, bank, amount }]
-        budgets: [], // [{ id, type: 'FIXED'|'VARIABLE', category, description, amount, isArchived: false, archiveDate: null }]
-        creditCards: [], // [{ id, name, utilizedLimit: 0 }]
-        creditPurchases: [], // [{ id, cardId, description, currentInstallment: 1, totalInstallments: 10, installmentAmount: 100, isArchived: false }]
-        archivedItems: [] // Generic archive reference
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+    apiKey: "AIzaSyAGiapfyqT4ANFr3oVKmB-pHqiNWBO7yU4",
+    authDomain: "aplicativo-financeiro-f1b07.firebaseapp.com",
+    projectId: "aplicativo-financeiro-f1b07",
+    storageBucket: "aplicativo-financeiro-f1b07.firebasestorage.app",
+    messagingSenderId: "600091482742",
+    appId: "1:600091482742:web:78fbb9033a10998986dd57"
+    // measurementId: "G-H7H5HKXRJW" (optional, analytics not needed for core function)
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// Referência ao banco de dados principal
+// Usamos um único documento central para simplificar e garantir coerência perfeita no "refreshAll"
+const DOC_REF = doc(db, 'financeApp', 'mainData_v3');
+
+window.Store = {
+    // Default Empty State (V3)
+    _localData: {
+        availableBalances: [],
+        budgets: [],
+        creditCards: [],
+        creditPurchases: [],
+        archivedItems: []
     },
 
-    // Initialize or load data
-    init() {
-        // Migration safeguard: if loading V1 data, overwrite with V2 empty state to avoid crashes
-        let data = JSON.parse(localStorage.getItem('financeApp_data'));
-        if (!data || !data.availableBalances) {
-            console.log("Initializing V2 Data Store...");
-            this.saveData(this._defaultState);
-        }
+    _onDataChangeCallback: null,
+
+    // Initialize the Firebase observer
+    init(onDataChange) {
+        this._onDataChangeCallback = onDataChange;
+        let isFirstLoad = true;
+
+        // Listener tempo real do Firebase (Sincronização em Nuvem)
+        onSnapshot(DOC_REF, (docSnap) => {
+            if (docSnap.exists()) {
+                console.log("⬇️ Dados sincronizados da Nuvem (Firebase)");
+                this._localData = docSnap.data();
+                if (this._onDataChangeCallback) this._onDataChangeCallback();
+            } else {
+                console.log("☁️ Inicializando novo banco de dados na Nuvem...");
+                // Se for a primeira vez que o banco abre e ele está vazio, tentar migrar dados antigos do LocalStorage do navegador da V2.
+                let oldLocalDataStr = localStorage.getItem('financeApp_data');
+                if (oldLocalDataStr) {
+                    try {
+                        let oldData = JSON.parse(oldLocalDataStr);
+                        if (oldData && oldData.availableBalances) {
+                            console.log("⬆️ Migrando dados Offline para o Firebase...");
+                            this._localData = oldData;
+                            this.saveData(oldData);
+                        }
+                    } catch (e) { }
+                } else {
+                    // Sem dados locais para migrar, salvar estado vazio inicial na nuvem
+                    this.saveData(this._localData);
+                }
+            }
+            isFirstLoad = false;
+        }, (error) => {
+            console.error("Erro na leitura do Firebase:", error);
+            if (isFirstLoad) {
+                alert("Erro ao conectar à Nuvem. Verificando dados offline limitados...");
+            }
+        });
     },
 
-    // Retrieve full data object
+    // Retrieve full data object (retorna sempre os dados espelhados em tempo real)
     getData() {
-        return JSON.parse(localStorage.getItem('financeApp_data')) || this._defaultState;
+        return JSON.parse(JSON.stringify(this._localData));
     },
 
-    // Save full data object
+    // Save full data object (Sobe para a Nuvem)
     saveData(data) {
-        localStorage.setItem('financeApp_data', JSON.stringify(data));
+        this._localData = data;
+        setDoc(DOC_REF, data).then(() => {
+            console.log("⬆️ Nuvem atualizada!");
+        }).catch(err => {
+            console.error("Erro ao subir dados para a nuvem:", err);
+            alert("Erro ao salvar! Você pode estar sem internet.");
+        });
     },
 
     // Generators for IDs
@@ -42,6 +100,3 @@ const Store = {
         return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
     }
 };
-
-// Initialize the store on load
-Store.init();

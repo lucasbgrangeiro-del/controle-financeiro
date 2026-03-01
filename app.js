@@ -269,7 +269,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    refreshAll();
+    window.Store.init(refreshAll);
 });
 
 // --- Renders ---
