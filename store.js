@@ -70,7 +70,19 @@ window.Store = {
         }, (error) => {
             console.error("Erro na leitura do Firebase:", error);
             if (isFirstLoad) {
-                alert("Erro ao conectar à Nuvem. Verificando dados offline limitados...");
+                alert("Atenção: Seu Banco de Dados do Firebase ainda não foi ativado ou está sem permissão. Exibindo dados salvos offline temporariamente.");
+                // Fallback to local data so the app doesn't stay blank
+                let oldLocalDataStr = localStorage.getItem('financeApp_data');
+                if (oldLocalDataStr) {
+                    try {
+                        let oldData = JSON.parse(oldLocalDataStr);
+                        if (oldData && oldData.availableBalances) {
+                            this._localData = oldData;
+                        }
+                    } catch (e) { }
+                }
+                if (this._onDataChangeCallback) this._onDataChangeCallback();
+                isFirstLoad = false;
             }
         });
     },
