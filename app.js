@@ -1,11 +1,10 @@
 /**
- * Main Application Logic (app.js)
- * Handles UI interactions, navigation, and rendering.
+ * Main Application Logic (app.js) - V2
  */
 
 document.addEventListener('DOMContentLoaded', () => {
 
-    // --- Navigation Logic ---
+    // --- Navigation ---
     const navItems = document.querySelectorAll('.nav-item');
     const modules = document.querySelectorAll('.module');
     const pageTitle = document.getElementById('page-title');
@@ -13,29 +12,20 @@ document.addEventListener('DOMContentLoaded', () => {
     navItems.forEach(item => {
         item.addEventListener('click', (e) => {
             e.preventDefault();
-
-            // Remove active from all navs and modules
             navItems.forEach(nav => nav.classList.remove('active'));
             modules.forEach(mod => mod.classList.remove('active'));
-
-            // Add active to clicked nav
             item.classList.add('active');
-
-            // Show corresponding module
             const targetId = item.getAttribute('data-target');
             document.getElementById(targetId).classList.add('active');
-
-            // Update Title
             pageTitle.textContent = item.textContent.trim();
         });
     });
 
-    // --- Theme Toggle Logic ---
+    // --- Theme ---
     const themeBtn = document.getElementById('theme-toggle');
     const themeIcon = themeBtn.querySelector('i');
     const themeText = themeBtn.querySelector('span');
 
-    // Check saved theme
     const savedTheme = localStorage.getItem('financeApp_theme') || 'dark';
     if (savedTheme === 'light') {
         document.body.classList.replace('dark-theme', 'light-theme');
@@ -65,12 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- Initial Dashboard Render ---
-    renderDashboard();
-    renderCards();
-    renderCashFlow();
-
-    // --- Modals Logic ---
+    // --- Modals ---
     const backdrop = document.getElementById('modal-backdrop');
     const modals = document.querySelectorAll('.modal');
     const btnCloseModals = document.querySelectorAll('.btn-close-modal');
@@ -88,12 +73,16 @@ document.addEventListener('DOMContentLoaded', () => {
     btnCloseModals.forEach(btn => btn.addEventListener('click', closeAllModals));
     backdrop.addEventListener('click', closeAllModals);
 
-    // Open Modal Triggers
-    document.getElementById('btn-new-card').addEventListener('click', () => openModal('modal-card'));
-    document.getElementById('btn-add-cash-flow').addEventListener('click', () => openModal('modal-cash'));
-    document.getElementById('btn-add-split').addEventListener('click', () => openModal('modal-split'));
+    document.getElementById('budget-type')?.addEventListener('change', (e) => {
+        const catGroup = document.getElementById('budget-category-group');
+        catGroup.style.display = e.target.value === 'VARIABLE' ? 'block' : 'none';
+    });
 
-    document.getElementById('btn-add-credit-expense').addEventListener('click', () => {
+    document.getElementById('btn-new-card')?.addEventListener('click', () => openModal('modal-card'));
+    document.getElementById('btn-add-balance')?.addEventListener('click', () => openModal('modal-balance'));
+    document.getElementById('btn-add-budget')?.addEventListener('click', () => openModal('modal-budget'));
+
+    document.getElementById('btn-add-credit-expense')?.addEventListener('click', () => {
         const data = Store.getData();
         const select = document.getElementById('expense-card-id');
         select.innerHTML = '<option value="">Selecione um cartão...</option>';
@@ -103,325 +92,418 @@ document.addEventListener('DOMContentLoaded', () => {
         openModal('modal-credit-expense');
     });
 
-    // --- Forms Logic ---
-
-    // 1. New Card Form
-    document.getElementById('form-card').addEventListener('submit', (e) => {
+    // --- Forms ---
+    document.getElementById('form-balance')?.addEventListener('submit', (e) => {
         e.preventDefault();
         const data = Store.getData();
+        data.availableBalances.push({
+            id: Store.generateId(),
+            bank: document.getElementById('balance-bank').value,
+            description: document.getElementById('balance-desc').value,
+            amount: parseFloat(document.getElementById('balance-amount').value)
+        });
+        Store.saveData(data);
+        closeAllModals(); e.target.reset();
+        refreshAll();
+    });
 
-        const newCard = {
+    document.getElementById('form-budget')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const data = Store.getData();
+        data.budgets.push({
+            id: Store.generateId(),
+            type: document.getElementById('budget-type').value,
+            category: document.getElementById('budget-type').value === 'VARIABLE' ? document.getElementById('budget-category').value : '',
+            description: document.getElementById('budget-desc').value,
+            amount: parseFloat(document.getElementById('budget-amount').value),
+            isArchived: false,
+            archiveDate: null
+        });
+        Store.saveData(data);
+        closeAllModals(); e.target.reset();
+        document.getElementById('budget-category-group').style.display = 'none';
+        refreshAll();
+    });
+
+    document.getElementById('form-card')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const data = Store.getData();
+        data.creditCards.push({
             id: Store.generateId(),
             name: document.getElementById('card-name').value,
             closingDay: document.getElementById('card-closing').value,
             dueDay: document.getElementById('card-due').value,
-            limit: parseFloat(document.getElementById('card-limit').value || 0)
-        };
-
-        data.creditCards.push(newCard);
+            utilizedLimit: parseFloat(document.getElementById('card-limit').value || 0)
+        });
         Store.saveData(data);
-
-        closeAllModals();
-        e.target.reset();
-        renderCards();
+        closeAllModals(); e.target.reset();
+        refreshAll();
     });
 
-    // 2. New Cash Flow Form
-    document.getElementById('form-cash').addEventListener('submit', (e) => {
+    document.getElementById('form-credit-expense')?.addEventListener('submit', (e) => {
         e.preventDefault();
         const data = Store.getData();
-
-        const newCash = {
-            id: Store.generateId(),
-            date: document.getElementById('cash-date').value,
-            origin: document.getElementById('cash-origin').value,
-            description: document.getElementById('cash-desc').value,
-            amount: parseFloat(document.getElementById('cash-amount').value)
-        };
-
-        data.cashFlow.push(newCash);
-        Store.saveData(data);
-
-        closeAllModals();
-        e.target.reset();
-        renderCashFlow();
-        renderDashboard();
-    });
-
-    // 3. New Credit Card Expense Form
-    document.getElementById('form-credit-expense').addEventListener('submit', (e) => {
-        e.preventDefault();
-        const data = Store.getData();
-
-        const amount = parseFloat(document.getElementById('expense-amount').value);
+        const totalAmount = parseFloat(document.getElementById('expense-amount').value);
         const installments = parseInt(document.getElementById('expense-installments').value);
 
-        const newExpense = {
+        data.creditPurchases.push({
             id: Store.generateId(),
-            type: 'CREDIT_CARD',
             cardId: document.getElementById('expense-card-id').value,
             date: document.getElementById('expense-date').value,
             description: document.getElementById('expense-desc').value,
-            amount: amount,
-            installments: installments
-        };
-
-        data.transactions.push(newExpense);
+            currentInstallment: 1, // Start at 1
+            totalInstallments: installments,
+            installmentAmount: totalAmount / installments,
+            isArchived: false
+        });
         Store.saveData(data);
-
-        closeAllModals();
-        e.target.reset();
-        renderCards();
-        renderCreditTransactions();
-        renderDashboard();
+        closeAllModals(); e.target.reset();
+        refreshAll();
     });
 
-    // 4. New Split Expense Form
-    document.getElementById('form-split').addEventListener('submit', (e) => {
-        e.preventDefault();
-        const data = Store.getData();
-
-        const checkedParticipants = Array.from(document.querySelectorAll('input[name="split-participants"]:checked')).map(cb => cb.value);
-
-        const newSplit = {
-            id: Store.generateId(),
-            date: new Date().toISOString().split('T')[0],
-            payer: document.getElementById('split-payer').value,
-            description: document.getElementById('split-desc').value,
-            amount: parseFloat(document.getElementById('split-amount').value),
-            participants: checkedParticipants
-        };
-
-        if (checkedParticipants.length === 0) {
-            alert('Selecione pelo menos um participante para dividir a conta.');
-            return;
+    // Globals
+    window.archiveBudget = function (id) {
+        if (confirm('Tem certeza que deseja marcar esta rubrica como paga/efetivada?')) {
+            const data = Store.getData();
+            const budget = data.budgets.find(b => b.id === id);
+            if (budget) {
+                budget.isArchived = true;
+                budget.archiveDate = new Date().toISOString().split('T')[0];
+                Store.saveData(data);
+                refreshAll();
+            }
         }
+    };
 
-        data.splitExpenses.push(newSplit);
-        Store.saveData(data);
+    window.deleteBalance = function (id) {
+        if (confirm('Remover este saldo?')) {
+            const data = Store.getData();
+            data.availableBalances = data.availableBalances.filter(b => b.id !== id);
+            Store.saveData(data);
+            refreshAll();
+        }
+    };
 
-        closeAllModals();
-        e.target.reset();
-        renderSplitExpenses();
-        renderDashboard();
-    });
+    window.deleteCard = function (id) {
+        if (confirm('Apagar este cartão e suas despesas atreladas?')) {
+            const data = Store.getData();
+            data.creditCards = data.creditCards.filter(c => c.id !== id);
+            data.creditPurchases = data.creditPurchases.filter(p => p.cardId !== id);
+            Store.saveData(data);
+            refreshAll();
+        }
+    };
 
+    window.payInstallment = function (id) {
+        if (confirm('Avançar uma parcela desta compra?')) {
+            const data = Store.getData();
+            const purchase = data.creditPurchases.find(p => p.id === id);
+            if (purchase) {
+                if (purchase.currentInstallment < purchase.totalInstallments) {
+                    purchase.currentInstallment += 1;
+                } else {
+                    purchase.isArchived = true; // Terminou de pagar
+                }
+                Store.saveData(data);
+                refreshAll();
+            }
+        }
+    };
+
+    window.updateCardLimit = function (id) {
+        const data = Store.getData();
+        const card = data.creditCards.find(c => c.id === id);
+        if (card) {
+            const nextLimit = prompt('Informe o limite de crédito utilizado atualmente do cartão:', card.utilizedLimit);
+            if (nextLimit !== null) {
+                card.utilizedLimit = parseFloat(nextLimit);
+                Store.saveData(data);
+                refreshAll();
+            }
+        }
+    };
+
+    refreshAll();
 });
 
-// --- Render Functions ---
+// --- Renders ---
+function refreshAll() {
+    renderAvailableBalances();
+    renderBudgets();
+    renderCards();
+    renderArchive();
+    renderDashboard();
+}
 
-function renderDashboard() {
+function renderAvailableBalances() {
     const data = Store.getData();
+    const tbody = document.querySelector('#table-available-balances tbody');
+    if (!tbody) return;
 
-    // Calcula movimentação de caixa (dinheiro)
-    let totalCash = data.cashFlow.reduce((acc, curr) => acc + parseFloat(curr.amount), 0);
-    document.getElementById('dash-cash-flow').textContent = Store.formatCurrency(totalCash);
+    if (data.availableBalances.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;" class="text-secondary">Nenhum saldo cadastrado.</td></tr>';
+        return;
+    }
 
-    // Calcular faturas (Simplificado para o momento)
-    let currentCredit = data.transactions
-        .filter(t => t.type === 'CREDIT_CARD')
-        .reduce((acc, curr) => acc + parseFloat(curr.amount), 0);
-    document.getElementById('dash-credit-current').textContent = Store.formatCurrency(currentCredit);
-
-    // Calcular Saldo de Rateio do Usuário Logado (Lucas)
-    let myBalance = 0; // Positivo = Tenho a receber, Negativo = Tenho a pagar (Simplificado)
-    data.splitExpenses.forEach(exp => {
-        const splitAmount = exp.amount / exp.participants.length;
-        if (exp.payer === 'Lucas') {
-            // Lucas pagou a mais, recebe de volta dos outros
-            const othersCount = exp.participants.filter(p => p !== 'Lucas').length;
-            myBalance += splitAmount * othersCount;
-        } else if (exp.participants.includes('Lucas')) {
-            // Lucas deve a quem pagou
-            myBalance -= splitAmount;
-        }
+    tbody.innerHTML = '';
+    data.availableBalances.forEach(item => {
+        tbody.innerHTML += `
+            <tr>
+                <td><strong>${item.bank}</strong></td>
+                <td>${item.description}</td>
+                <td style="font-weight:600; color:var(--positive);">${Store.formatCurrency(item.amount)}</td>
+                <td>
+                    <button class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.8rem;" onclick="deleteBalance('${item.id}')">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
     });
+}
 
-    const elBalance = document.getElementById('dash-split-balance');
-    elBalance.textContent = Store.formatCurrency(myBalance);
-    elBalance.className = 'amount ' + (myBalance > 0 ? 'positive' : (myBalance < 0 ? 'negative' : 'neutral-color'));
+function renderBudgets() {
+    const data = Store.getData();
+    const tFixed = document.querySelector('#table-budgets-fixed tbody');
+    const tVar = document.querySelector('#table-budgets-variable tbody');
+    if (!tFixed || !tVar) return;
+
+    tFixed.innerHTML = ''; tVar.innerHTML = '';
+
+    const activeBudgets = data.budgets.filter(b => !b.isArchived);
+    const fixed = activeBudgets.filter(b => b.type === 'FIXED');
+    const variable = activeBudgets.filter(b => b.type === 'VARIABLE');
+
+    if (fixed.length === 0) {
+        tFixed.innerHTML = '<tr><td colspan="3" style="text-align:center;" class="text-secondary">Nenhuma despesa fixa.</td></tr>';
+    } else {
+        fixed.forEach(item => {
+            tFixed.innerHTML += `
+                <tr>
+                    <td><strong>${item.description}</strong></td>
+                    <td style="font-weight: 600; color:var(--negative)">${Store.formatCurrency(item.amount)}</td>
+                    <td>
+                        <button class="btn btn-primary" style="padding: 5px 10px; font-size: 0.8rem;" onclick="archiveBudget('${item.id}')">Efetivar</button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    if (variable.length === 0) {
+        tVar.innerHTML = '<tr><td colspan="4" style="text-align:center;" class="text-secondary">Nenhuma despesa variável.</td></tr>';
+    } else {
+        variable.forEach(item => {
+            tVar.innerHTML += `
+                <tr>
+                    <td><span class="badge" style="background: rgba(255,255,255,0.1); color: var(--text-primary);">${item.category}</span></td>
+                    <td><strong>${item.description}</strong></td>
+                    <td style="font-weight: 600; color:var(--negative)">${Store.formatCurrency(item.amount)}</td>
+                    <td>
+                        <button class="btn btn-primary" style="padding: 5px 10px; font-size: 0.8rem;" onclick="archiveBudget('${item.id}')">Efetivar</button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
 }
 
 function renderCards() {
     const data = Store.getData();
     const cardsList = document.getElementById('cards-list');
+    const tTransactions = document.querySelector('#table-credit-transactions tbody');
+    if (!cardsList || !tTransactions) return;
 
     if (data.creditCards.length === 0) {
         cardsList.innerHTML = '<div class="generic-message text-secondary">Nenhum cartão cadastrado.</div>';
+        tTransactions.innerHTML = '<tr><td colspan="6" style="text-align:center;" class="text-secondary">Nenhum lançamento.</td></tr>';
         return;
     }
 
     cardsList.innerHTML = '';
+    tTransactions.innerHTML = '';
+
     data.creditCards.forEach(card => {
-        // Calculate spent amount (mock logic for now)
-        const spent = data.transactions
-            .filter(t => t.cardId === card.id)
-            .reduce((acc, curr) => acc + parseFloat(curr.amount), 0);
+        // Purchases for this card
+        const purchases = data.creditPurchases.filter(p => !p.isArchived && p.cardId === card.id);
 
-        const limitStr = card.limit > 0 ? Store.formatCurrency(card.limit) : 'Ilimitado';
-        const percent = card.limit > 0 ? Math.min((spent / card.limit) * 100, 100) : 0;
+        let debitoRemanescenteTotal = 0;
 
-        const cardHTML = `
+        purchases.forEach(p => {
+            const debitoTotal = (p.totalInstallments - p.currentInstallment + 1) * p.installmentAmount;
+            const debitoRemanescente = debitoTotal - p.installmentAmount; // Excludes the current month's installment
+            debitoRemanescenteTotal += debitoRemanescente;
+
+            // Format Date
+            const dateParts = p.date.split('-');
+            const dateStr = dateParts.length === 3 ? `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}` : p.date;
+
+            tTransactions.innerHTML += `
+                <tr>
+                    <td>${dateStr}</td>
+                    <td><span class="badge" style="background: rgba(255,255,255,0.1); color: var(--text-primary);">${card.name}</span></td>
+                    <td>${p.description}</td>
+                    <td>${p.currentInstallment}/${p.totalInstallments} (${Store.formatCurrency(p.installmentAmount)})</td>
+                    <td><span style="font-size: 0.85em; color: var(--text-secondary);">Total: ${Store.formatCurrency(debitoTotal)}</span><br><strong style="color:var(--negative)">Rem: ${Store.formatCurrency(debitoRemanescente)}</strong></td>
+                    <td>
+                        <button class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.8rem;" onclick="payInstallment('${p.id}')">
+                            <i class="fa-solid fa-check"></i> Pagar Parcela
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        const faturaAtual = card.utilizedLimit - debitoRemanescenteTotal;
+
+        cardsList.innerHTML += `
             <div class="credit-card-ui">
                 <div class="card-bank">
                     <span>${card.name}</span>
-                    <i class="fa-brands fa-cc-visa" style="opacity: 0.5;"></i>
+                    <button class="btn btn-secondary" style="padding: 2px 5px; border:none; background:transparent;" onclick="deleteCard('${card.id}')"><i class="fa-solid fa-trash text-secondary"></i></button>
                 </div>
-                <div>
-                    <p class="card-limit">Gasto: ${Store.formatCurrency(spent)} / ${limitStr}</p>
-                    <div class="card-limit-bar">
-                        <div class="card-limit-fill" style="width: ${percent}%;"></div>
-                    </div>
+                <!-- Limite Utilizado Input Dinamico -->
+                <div style="margin-top:10px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-size:0.9rem; color:var(--text-secondary);">Limite Utilizado:</span>
+                    <strong style="cursor:pointer; padding:5px; background:rgba(255,255,255,0.1); border-radius:4px;" onclick="updateCardLimit('${card.id}')">
+                        ${Store.formatCurrency(card.utilizedLimit)} <i class="fa-solid fa-pen" style="font-size:0.7em;"></i>
+                    </strong>
                 </div>
+                
+                <div style="padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <p class="card-limit" style="font-size:1.1rem; color:var(--negative);">Fatura Calculada: ${Store.formatCurrency(faturaAtual)}</p>
+                </div>
+                
                 <div style="margin-top: 15px; font-size: 0.8rem; color: var(--text-secondary); display:flex; justify-content:space-between;">
                     <span>Fecha dia ${card.closingDay}</span>
                     <span>Vence dia ${card.dueDay}</span>
                 </div>
             </div>
         `;
-        cardsList.innerHTML += cardHTML;
     });
 }
 
-function renderCashFlow() {
+function renderArchive() {
     const data = Store.getData();
-    const tbody = document.querySelector('#table-cash-flow tbody');
+    const tbody = document.querySelector('#table-archive tbody');
+    if (!tbody) return;
 
-    if (data.cashFlow.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;" class="text-secondary">Nenhuma movimentação.</td></tr>';
+    const archived = data.budgets.filter(b => b.isArchived).sort((a, b) => new Date(b.archiveDate) - new Date(a.archiveDate));
+
+    if (archived.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;" class="text-secondary">Nenhum registro arquivado.</td></tr>';
         return;
     }
 
     tbody.innerHTML = '';
+    archived.forEach(item => {
+        const dateParts = item.archiveDate.split('-');
+        const dateStr = dateParts.length === 3 ? `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}` : item.archiveDate;
 
-    // Sort by date descending
-    const sorted = [...data.cashFlow].sort((a, b) => new Date(b.date) - new Date(a.date));
-
-    sorted.forEach(item => {
-        const isExpense = item.amount < 0;
-        const badgeClass = isExpense ? 'badge expense' : 'badge income';
-        const badgeText = isExpense ? 'Saída' : 'Entrada';
-        const amountColor = isExpense ? 'color: var(--negative)' : 'color: var(--positive)';
-
-        // Format Date (YYYY-MM-DD -> DD/MM/YYYY)
-        const dateParts = item.date.split('-');
-        const dateStr = dateParts.length === 3 ? `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}` : item.date;
-
-        const row = `
+        tbody.innerHTML += `
             <tr>
                 <td>${dateStr}</td>
-                <td><strong>${item.origin}</strong></td>
-                <td>${item.description}</td>
-                <td><span class="${badgeClass}">${badgeText}</span></td>
-                <td style="font-weight: 600; ${amountColor}">${Store.formatCurrency(item.amount)}</td>
+                <td><span class="badge" style="background: rgba(255,255,255,0.1); color: var(--text-primary);">${item.type === 'FIXED' ? 'Fixa' : item.category}</span></td>
+                <td style="text-decoration: line-through; color: var(--text-secondary);">${item.description}</td>
+                <td style="font-weight: 600; color: var(--text-secondary);">${Store.formatCurrency(item.amount)}</td>
             </tr>
         `;
-        tbody.innerHTML += row;
     });
 }
 
-function renderCreditTransactions() {
+function renderDashboard() {
     const data = Store.getData();
-    const tbody = document.querySelector('#table-credit-transactions tbody');
 
-    // Filtramos apenas as do tipo CREDIT_CARD
-    const creds = data.transactions.filter(t => t.type === 'CREDIT_CARD').sort((a, b) => new Date(b.date) - new Date(a.date));
+    // 1. Receitas (Disponibilidades)
+    const totalReceitas = data.availableBalances.reduce((acc, curr) => acc + curr.amount, 0);
 
-    if (creds.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;" class="text-secondary">Nenhum lançamento.</td></tr>';
-        return;
-    }
+    // 2. Despesas Fixas (Não arquivadas)
+    const activeBudgets = data.budgets.filter(b => !b.isArchived);
+    const totalFixas = activeBudgets.filter(b => b.type === 'FIXED').reduce((acc, curr) => acc + curr.amount, 0);
 
-    tbody.innerHTML = '';
+    // 3. Despesas Variáveis Comuns (Não arquivadas)
+    const totalVariaveis = activeBudgets.filter(b => b.type === 'VARIABLE').reduce((acc, curr) => acc + curr.amount, 0);
 
-    creds.forEach(item => {
-        const cardObj = data.creditCards.find(c => c.id === item.cardId);
-        const cardName = cardObj ? cardObj.name : 'Desconhecido';
+    // 4. Calcular Faturas Calculadas de Todos os Cartões e adicionar às variaveis
+    let totalCartoes = 0;
+    const cartoesFaturas = []; // Para listar no dashboard
 
-        // Format Date
-        const dateParts = item.date.split('-');
-        const dateStr = dateParts.length === 3 ? `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}` : item.date;
-
-        const row = `
-            <tr>
-                <td>${dateStr}</td>
-                <td><span class="badge" style="background: rgba(255,255,255,0.1); color: var(--text-primary);">${cardName}</span></td>
-                <td>${item.description}</td>
-                <td>1/${item.installments}</td>
-                <td style="font-weight: 600; color: var(--negative);">${Store.formatCurrency(item.amount)}</td>
-            </tr>
-        `;
-        tbody.innerHTML += row;
-    });
-}
-
-function renderSplitExpenses() {
-    const data = Store.getData();
-    const tbody = document.querySelector('#table-split-flow tbody');
-    const balancesDiv = document.getElementById('split-balances');
-
-    if (data.splitExpenses.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;" class="text-secondary">Nenhum rateio.</td></tr>';
-        balancesDiv.innerHTML = '<div class="text-secondary">Nenhum rateio registrado.</div>';
-        return;
-    }
-
-    // --- Render Table ---
-    tbody.innerHTML = '';
-    const sorted = [...data.splitExpenses].sort((a, b) => new Date(b.date) - new Date(a.date));
-
-    sorted.forEach(item => {
-        const dateParts = item.date.split('-');
-        const dateStr = dateParts.length === 3 ? `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}` : item.date;
-
-        const row = `
-            <tr>
-                <td>${dateStr}</td>
-                <td><span class="badge income">${item.payer}</span></td>
-                <td>${item.description} <br><small class="text-secondary">Rateio: ${item.participants.join(', ')}</small></td>
-                <td style="font-weight: 600;">${Store.formatCurrency(item.amount)}</td>
-            </tr>
-        `;
-        tbody.innerHTML += row;
-    });
-
-    // --- Render Balances ---
-    let balances = {
-        'Lucas': 0, 'Ivson': 0, 'Artur': 0, 'Duva': 0
-    };
-
-    data.splitExpenses.forEach(exp => {
-        const split = exp.amount / exp.participants.length;
-
-        // Quem pagou recebe de volta o total menos a parte dele (se ele participou)
-        const othersToPay = exp.participants.filter(p => p !== exp.payer).length;
-        balances[exp.payer] += (split * othersToPay);
-
-        // Quem participou e NÃO pagou deve a sua parte
-        exp.participants.forEach(p => {
-            if (p !== exp.payer) {
-                balances[p] -= split;
-            }
+    data.creditCards.forEach(card => {
+        const purchases = data.creditPurchases.filter(p => !p.isArchived && p.cardId === card.id);
+        let debitoRemanescenteTotal = 0;
+        purchases.forEach(p => {
+            const debitoTotal = (p.totalInstallments - p.currentInstallment + 1) * p.installmentAmount;
+            const debitoRemanescente = debitoTotal - p.installmentAmount;
+            debitoRemanescenteTotal += debitoRemanescente;
         });
-    });
+        const faturaAtual = card.utilizedLimit - debitoRemanescenteTotal;
 
-    balancesDiv.innerHTML = '';
-    Object.keys(balances).forEach(person => {
-        const bal = balances[person];
-        if (bal !== 0 || data.splitExpenses.length > 0) {
-            const isPos = bal > 0;
-            const isNeg = bal < 0;
-            const bClass = isPos ? 'positive' : (isNeg ? 'negative' : 'neutral-color');
-            const lbl = isPos ? 'A Receber' : (isNeg ? 'A Pagar' : 'Zerado');
-            balancesDiv.innerHTML += `
-                <div class="card glass-effect" style="flex: 1; padding: 1rem; min-width: 140px;">
-                    <h4 style="color: var(--text-secondary); margin-bottom: 5px;">${person}</h4>
-                    <div style="font-size: 1.2rem; font-weight: bold;" class="amount ${bClass}">${Store.formatCurrency(bal)}</div>
-                    <div style="font-size: 0.8rem; margin-top: 5px;" class="${bClass}">${lbl}</div>
-                </div>
-            `;
+        if (faturaAtual > 0) {
+            totalCartoes += faturaAtual;
+            cartoesFaturas.push({ name: card.name, amount: faturaAtual });
         }
     });
 
-}
+    const despesasTotais = totalFixas + totalVariaveis + totalCartoes;
+    const resultadoLiq = totalReceitas - despesasTotais;
 
+    // Atualizar HTML Principal
+    const dashReceitas = document.getElementById('dash-cash-flow');
+    if (dashReceitas) dashReceitas.textContent = Store.formatCurrency(totalReceitas);
+
+    const dashDespesas = document.getElementById('dash-credit-current');
+    if (dashDespesas) {
+        dashDespesas.textContent = Store.formatCurrency(despesasTotais);
+    }
+
+    const dashResult = document.getElementById('dash-split-balance');
+    if (dashResult) {
+        dashResult.textContent = Store.formatCurrency(resultadoLiq);
+        dashResult.className = 'amount ' + (resultadoLiq >= 0 ? 'positive' : 'negative');
+    }
+
+    // Listas do Widget
+    const ulReceitas = document.getElementById('list-dash-receitas');
+    const ulDespesas = document.getElementById('list-dash-despesas');
+    if (!ulReceitas || !ulDespesas) return;
+
+    // Render Receitas
+    if (data.availableBalances.length === 0) {
+        ulReceitas.innerHTML = '<li class="text-secondary text-center">Nenhum saldo...</li>';
+    } else {
+        ulReceitas.innerHTML = '';
+        data.availableBalances.forEach(b => {
+            ulReceitas.innerHTML += `
+                <li style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:5px;">
+                    <span>${b.bank}</span>
+                    <strong style="color:var(--positive);">${Store.formatCurrency(b.amount)}</strong>
+                </li>
+            `;
+        });
+    }
+
+    // Render Despesas
+    if (activeBudgets.length === 0 && cartoesFaturas.length === 0) {
+        ulDespesas.innerHTML = '<li class="text-secondary text-center">Nenhuma despesa...</li>';
+    } else {
+        ulDespesas.innerHTML = '';
+        // Fixas e Variáveis
+        activeBudgets.forEach(b => {
+            ulDespesas.innerHTML += `
+                <li style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:5px;">
+                    <span>${b.description} <small class="text-secondary">(${b.type === 'FIXED' ? 'Fixa' : b.category})</small></span>
+                    <strong style="color:var(--negative);">${Store.formatCurrency(b.amount)}</strong>
+                </li>
+            `;
+        });
+        // Cartões
+        cartoesFaturas.forEach(c => {
+            ulDespesas.innerHTML += `
+                <li style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:5px;">
+                    <span>Fatura Cartão <small class="text-secondary">(${c.name})</small></span>
+                    <strong style="color:var(--negative);">${Store.formatCurrency(c.amount)}</strong>
+                </li>
+            `;
+        });
+    }
+}

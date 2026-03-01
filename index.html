@@ -20,16 +20,19 @@
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-target="dashboard">
-                    <i class="fa-solid fa-chart-line"></i> Dashboard
+                    <i class="fa-solid fa-chart-line"></i> Dashboard Principal
+                </a>
+                <a href="#" class="nav-item" data-target="available-balances">
+                    <i class="fa-solid fa-building-columns"></i> Saldo Disponível
+                </a>
+                <a href="#" class="nav-item" data-target="budgets">
+                    <i class="fa-solid fa-list-check"></i> Rubricas Orçamentárias
                 </a>
                 <a href="#" class="nav-item" data-target="credit-cards">
                     <i class="fa-solid fa-credit-card"></i> Cartões de Crédito
                 </a>
-                <a href="#" class="nav-item" data-target="cash-flow">
-                    <i class="fa-solid fa-money-bill-transfer"></i> Movimentação Caixa
-                </a>
-                <a href="#" class="nav-item" data-target="expenses-split">
-                    <i class="fa-solid fa-users"></i> Divisão Despesas
+                <a href="#" class="nav-item" data-target="archive">
+                    <i class="fa-solid fa-box-archive"></i> Arquivo Morto
                 </a>
             </nav>
             <div class="sidebar-footer">
@@ -57,31 +60,43 @@
                         <div class="card glass-effect">
                             <div class="card-icon income"><i class="fa-solid fa-arrow-trend-up"></i></div>
                             <div class="card-info">
-                                <h3>Dinheiro em Caixa (Estimado)</h3>
+                                <h3>Total Receitas (Disponível)</h3>
                                 <p class="amount positive" id="dash-cash-flow">R$ 0,00</p>
                             </div>
                         </div>
                         <div class="card glass-effect">
-                            <div class="card-icon expense"><i class="fa-solid fa-credit-card"></i></div>
+                            <div class="card-icon expense"><i class="fa-solid fa-arrow-trend-down"></i></div>
                             <div class="card-info">
-                                <h3>Fatura Atual (Cartão)</h3>
+                                <h3>Total Despesas (Orçadas)</h3>
                                 <p class="amount negative" id="dash-credit-current">R$ 0,00</p>
                             </div>
                         </div>
                         <div class="card glass-effect">
-                            <div class="card-icon neutral"><i class="fa-solid fa-users"></i></div>
+                            <div class="card-icon neutral"><i class="fa-solid fa-magnifying-glass-dollar"></i></div>
                             <div class="card-info">
-                                <h3>Seu Saldo Restante a Pagar</h3>
+                                <h3>Resultado Líquido</h3>
                                 <p class="amount neutral-color" id="dash-split-balance">R$ 0,00</p>
                             </div>
                         </div>
                     </div>
 
-                    <div class="dashboard-widgets">
-                        <div class="widget glass-effect">
-                            <h3>Resumo de Cartões</h3>
-                            <div id="dash-cards-summary" class="widget-content placeholder">
-                                Nenhum cartão cadastrado.
+                    <div class="dashboard-widgets" style="display: flex; gap: 2rem; margin-top: 2rem; flex-wrap: wrap;">
+                        <div class="widget glass-effect" style="flex: 1; min-width: 300px;">
+                            <h3><i class="fa-solid fa-building-columns"
+                                    style="color: var(--positive); margin-right: 5px;"></i> Minhas Receitas</h3>
+                            <div class="widget-content">
+                                <ul style="list-style: none; padding: 0; margin-top: 15px;" id="list-dash-receitas">
+                                    <li class="text-secondary" style="text-align:center;">Nenhum saldo...</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="widget glass-effect" style="flex: 1; min-width: 300px;">
+                            <h3><i class="fa-solid fa-file-invoice-dollar"
+                                    style="color: var(--negative); margin-right: 5px;"></i> Minhas Despesas Ativas</h3>
+                            <div class="widget-content">
+                                <ul style="list-style: none; padding: 0; margin-top: 15px;" id="list-dash-despesas">
+                                    <li class="text-secondary" style="text-align:center;">Nenhuma despesa...</li>
+                                </ul>
                             </div>
                         </div>
                     </div>
@@ -129,65 +144,110 @@
                     </div>
                 </section>
 
-                <section id="cash-flow" class="module">
+                <section id="available-balances" class="module">
                     <div class="module-header glass-effect p-4 mb-4"
                         style="padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
-                        <h2>Movimentação de Caixa</h2>
-                        <button id="btn-add-cash-flow" class="btn btn-primary"><i
-                                class="fa-solid fa-money-bill-transfer"></i> Nova Movimentação</button>
+                        <h2>Saldo Disponível</h2>
+                        <button id="btn-add-balance" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Adicionar
+                            Saldo</button>
                     </div>
 
                     <div class="table-container glass-effect">
-                        <table class="data-table" id="table-cash-flow">
+                        <table class="data-table" id="table-available-balances">
                             <thead>
                                 <tr>
-                                    <th>Data</th>
-                                    <th>Origem / Destino</th>
+                                    <th>Banco / Origem</th>
                                     <th>Descrição</th>
-                                    <th>Tipo</th>
                                     <th>Valor</th>
+                                    <th>Ações</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td colspan="5" style="text-align:center;" class="text-secondary">Nenhuma
-                                        movimentação.</td>
+                                    <td colspan="4" style="text-align:center;" class="text-secondary">Nenhum saldo
+                                        cadastrado.</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
                 </section>
 
-                <section id="expenses-split" class="module">
+                <section id="budgets" class="module">
                     <div class="module-header glass-effect"
                         style="padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
-                        <h2>Divisão de Despesas</h2>
-                        <button id="btn-add-split" class="btn btn-primary"><i class="fa-solid fa-users"></i> Registrar
-                            Conta Paga</button>
+                        <div>
+                            <h2>Rubricas Orçamentárias</h2>
+                            <p class="text-secondary" style="font-size:0.9rem; margin-top:5px;">Provisões de despesas
+                                fixas e variáveis</p>
+                        </div>
+                        <button id="btn-add-budget" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Nova
+                            Rubrica</button>
                     </div>
 
-                    <div class="widget glass-effect mb-4" style="margin-bottom: 2rem;">
-                        <h3>Saldos a Compensar</h3>
-                        <div id="split-balances" class="flex-row gap-2"
-                            style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                            <div class="text-secondary">Calculando...</div>
+                    <div class="module-section" style="margin-top: 2rem;">
+                        <h3 style="margin-bottom: 1rem; color: var(--negative);">Despesas Fixas</h3>
+                        <div class="table-container glass-effect mb-4" style="margin-bottom: 2rem;">
+                            <table class="data-table" id="table-budgets-fixed">
+                                <thead>
+                                    <tr>
+                                        <th>Descrição</th>
+                                        <th>Valor Previsto</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="3" style="text-align:center;" class="text-secondary">Nenhuma
+                                            despesa fixa.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
+
+                        <h3 style="margin-bottom: 1rem; color: var(--accent);">Despesas Variáveis (Diversos, Cartões)
+                        </h3>
+                        <div class="table-container glass-effect">
+                            <table class="data-table" id="table-budgets-variable">
+                                <thead>
+                                    <tr>
+                                        <th>Categoria / Cartão</th>
+                                        <th>Descrição</th>
+                                        <th>Valor Estimado/Fatura</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="4" style="text-align:center;" class="text-secondary">Nenhuma
+                                            despesa variável.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="archive" class="module">
+                    <div class="module-header glass-effect"
+                        style="padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
+                        <h2>Arquivo Morto (Histórico)</h2>
+                        <p class="text-secondary text-sm">Contas marcadas como pagas e efetivadas.</p>
                     </div>
 
                     <div class="table-container glass-effect">
-                        <table class="data-table" id="table-split-flow">
+                        <table class="data-table" id="table-archive">
                             <thead>
                                 <tr>
-                                    <th>Data</th>
-                                    <th>Quem Pagou</th>
-                                    <th>Descrição / Motivo</th>
-                                    <th>Valor Total</th>
+                                    <th>Data Efetivação</th>
+                                    <th>Tipo</th>
+                                    <th>Descrição original</th>
+                                    <th>Valor</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td colspan="4" style="text-align:center;" class="text-secondary">Nenhum rateio.
-                                    </td>
+                                    <td colspan="4" style="text-align:center;" class="text-secondary">Nenhum registro
+                                        arquivado.</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -233,118 +293,73 @@
         </form>
     </div>
 
-    <!-- Modal Form: Nova Movimentação Caixa -->
-    <div id="modal-cash" class="modal glass-effect">
+    <!-- Modal Form: Saldo Disponível -->
+    <div id="modal-balance" class="modal glass-effect">
         <div class="modal-header">
-            <h3>Movimentação de Caixa</h3>
+            <h3>Adicionar Saldo Disponível</h3>
             <button class="btn-close-modal"><i class="fa-solid fa-xmark"></i></button>
         </div>
-        <form id="form-cash">
+        <form id="form-balance">
             <div class="form-group">
-                <label>Data</label>
-                <input type="date" id="cash-date" required class="input-modern">
+                <label>Banco / Origem</label>
+                <input type="text" id="balance-bank" required class="input-modern"
+                    placeholder="Ex: Nubank, BB, Carteira">
             </div>
             <div class="form-group">
-                <label>Origem / Destino (ex: Dona Ana, Corretor)</label>
-                <input type="text" id="cash-origin" required class="input-modern">
-            </div>
-            <div class="form-group">
-                <label>Descrição</label>
-                <input type="text" id="cash-desc" required class="input-modern">
+                <label>Descrição Opcional</label>
+                <input type="text" id="balance-desc" class="input-modern" placeholder="Ex: Conta Corrente">
             </div>
             <div class="form-group">
                 <label>Valor (R$)</label>
-                <p class="text-sm text-secondary" style="font-size:12px; margin-bottom:5px;">(Use valor negativo para
-                    saídas/despesas)</p>
-                <input type="number" step="0.01" id="cash-amount" required class="input-modern"
-                    placeholder="-150.00 ou 500.00">
+                <input type="number" step="0.01" id="balance-amount" required class="input-modern"
+                    placeholder="5000.00">
             </div>
             <div class="form-actions" style="margin-top:20px; text-align:right;">
                 <button type="button" class="btn btn-secondary btn-close-modal">Cancelar</button>
-                <button type="submit" class="btn btn-primary">Salvar Movimentação</button>
+                <button type="submit" class="btn btn-primary">Salvar Saldo</button>
             </div>
         </form>
     </div>
 
-    <!-- Modal Form: Nova Despesa Cartão -->
-    <div id="modal-credit-expense" class="modal glass-effect">
+    <!-- Modal Form: Nova Rubrica Orçamentária -->
+    <div id="modal-budget" class="modal glass-effect">
         <div class="modal-header">
-            <h3>Lançar Despesa no Cartão</h3>
+            <h3>Nova Rubrica Orçamentária</h3>
             <button class="btn-close-modal"><i class="fa-solid fa-xmark"></i></button>
         </div>
-        <form id="form-credit-expense">
+        <form id="form-budget">
             <div class="form-group">
-                <label>Cartão de Crédito</label>
-                <select id="expense-card-id" required class="input-modern">
-                    <option value="">Selecione um cartão...</option>
+                <label>Tipo de Despesa</label>
+                <select id="budget-type" required class="input-modern">
+                    <option value="FIXED">Fixa em Espécie</option>
+                    <option value="VARIABLE">Variável / Diversos</option>
                 </select>
             </div>
-            <div class="form-group">
-                <label>Data da Compra</label>
-                <input type="date" id="expense-date" required class="input-modern">
+            <div class="form-group" id="budget-category-group" style="display: none;">
+                <label>Categoria (Apenas para Variável)</label>
+                <select id="budget-category" class="input-modern">
+                    <option value="Diversos">Diversos</option>
+                    <option value="Feira">Feira</option>
+                    <option value="Combustível">Combustível</option>
+                    <option value="Cartão BB">Cartão BB</option>
+                    <option value="Cartão SICREDI">Cartão SICREDI</option>
+                    <option value="Cartão CAIXA">Cartão CAIXA</option>
+                    <option value="Cartão NUBANK">Cartão NUBANK</option>
+                    <option value="Outro">Outro...</option>
+                </select>
             </div>
             <div class="form-group">
                 <label>Descrição</label>
-                <input type="text" id="expense-desc" required class="input-modern">
+                <input type="text" id="budget-desc" required class="input-modern"
+                    placeholder="Ex: Aluguel, Farmácia, Luz">
             </div>
-            <div class="form-row" style="display:flex; gap:10px;">
-                <div class="form-group" style="flex:1;">
-                    <label>Valor Total (R$)</label>
-                    <input type="number" step="0.01" id="expense-amount" required class="input-modern"
-                        placeholder="Ex: 1200.00">
-                </div>
-                <div class="form-group" style="flex:1;">
-                    <label>Qtd. Parcelas</label>
-                    <input type="number" id="expense-installments" min="1" value="1" required class="input-modern">
-                </div>
+            <div class="form-group">
+                <label>Valor Previsto/Fatura (R$)</label>
+                <input type="number" step="0.01" id="budget-amount" required class="input-modern">
             </div>
             <div class="form-actions" style="margin-top:20px; text-align:right;">
                 <button type="button" class="btn btn-secondary btn-close-modal">Cancelar</button>
-                <button type="submit" class="btn btn-primary">Lançar Despesa</button>
-            </div>
-        </form>
-    </div>
-
-    <!-- Modal Form: Divisão de Despesas -->
-    <div id="modal-split" class="modal glass-effect">
-        <div class="modal-header">
-            <h3>Registrar Conta Paga (Rateio)</h3>
-            <button class="btn-close-modal"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-        <form id="form-split">
-            <div class="form-group">
-                <label>Quem pagou a conta?</label>
-                <select id="split-payer" required class="input-modern">
-                    <option value="Lucas">Lucas</option>
-                    <option value="Ivson">Ivson</option>
-                    <option value="Artur">Artur</option>
-                    <option value="Duva">Duva</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Descrição / Motivo</label>
-                <input type="text" id="split-desc" required class="input-modern">
-            </div>
-            <div class="form-group">
-                <label>Valor Total Pago (R$)</label>
-                <input type="number" step="0.01" id="split-amount" required class="input-modern">
-            </div>
-            <div class="form-group" style="margin-top: 15px;">
-                <label style="margin-bottom: 10px;">Quem participou da despesa? (Será dividido por igual)</label>
-                <div style="display:flex; gap: 15px; flex-wrap: wrap;">
-                    <label style="display:flex; align-items:center; gap:5px;"><input type="checkbox"
-                            name="split-participants" value="Lucas" checked> Lucas</label>
-                    <label style="display:flex; align-items:center; gap:5px;"><input type="checkbox"
-                            name="split-participants" value="Ivson" checked> Ivson</label>
-                    <label style="display:flex; align-items:center; gap:5px;"><input type="checkbox"
-                            name="split-participants" value="Artur" checked> Artur</label>
-                    <label style="display:flex; align-items:center; gap:5px;"><input type="checkbox"
-                            name="split-participants" value="Duva" checked> Duva</label>
-                </div>
-            </div>
-            <div class="form-actions" style="margin-top:20px; text-align:right;">
-                <button type="button" class="btn btn-secondary btn-close-modal">Cancelar</button>
-                <button type="submit" class="btn btn-primary">Registrar Rateio</button>
+                <button type="submit" class="btn btn-primary">Salvar Rubrica</button>
             </div>
         </form>
     </div>

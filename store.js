@@ -4,17 +4,21 @@
  */
 
 const Store = {
-    // Default Empty State
+    // Default Empty State (V2)
     _defaultState: {
-        creditCards: [],      // [{ id, name, limit, closingDay, dueDay }]
-        transactions: [],     // [{ id, type ('CREDIT_CARD', 'CASH', 'SPLIT'), cardId, date, description, amount, installments, currentInstallment }]
-        cashFlow: [],         // [{ id, date, origin, description, amount }]
-        splitExpenses: []     // [{ id, payer, participants: [], amount, description, date }]
+        availableBalances: [], // [{ id, description, bank, amount }]
+        budgets: [], // [{ id, type: 'FIXED'|'VARIABLE', category, description, amount, isArchived: false, archiveDate: null }]
+        creditCards: [], // [{ id, name, utilizedLimit: 0 }]
+        creditPurchases: [], // [{ id, cardId, description, currentInstallment: 1, totalInstallments: 10, installmentAmount: 100, isArchived: false }]
+        archivedItems: [] // Generic archive reference
     },
 
     // Initialize or load data
     init() {
-        if (!localStorage.getItem('financeApp_data')) {
+        // Migration safeguard: if loading V1 data, overwrite with V2 empty state to avoid crashes
+        let data = JSON.parse(localStorage.getItem('financeApp_data'));
+        if (!data || !data.availableBalances) {
+            console.log("Initializing V2 Data Store...");
             this.saveData(this._defaultState);
         }
     },
