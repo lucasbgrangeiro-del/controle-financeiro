@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinanceApp - Seu Controle Financeiro Elegante</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body class="dark-theme">
+    <div class="app-container">
+
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="fa-solid fa-wallet"></i> FinanceApp</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-target="dashboard">
+                    <i class="fa-solid fa-chart-line"></i> Dashboard
+                </a>
+                <a href="#" class="nav-item" data-target="credit-cards">
+                    <i class="fa-solid fa-credit-card"></i> Cartões de Crédito
+                </a>
+                <a href="#" class="nav-item" data-target="cash-flow">
+                    <i class="fa-solid fa-money-bill-transfer"></i> Movimentação Caixa
+                </a>
+                <a href="#" class="nav-item" data-target="expenses-split">
+                    <i class="fa-solid fa-users"></i> Divisão Despesas
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <button id="theme-toggle" class="btn-icon">
+                    <i class="fa-solid fa-sun"></i> <span>Tema Claro</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header class="main-header">
+                <h1 id="page-title">Dashboard</h1>
+                <div class="user-profile">
+                    <div class="avatar">L</div>
+                    <span>Lucas</span>
+                </div>
+            </header>
+
+            <div class="content-area">
+
+                <!-- Dashboard Module -->
+                <section id="dashboard" class="module active">
+                    <div class="summary-cards">
+                        <div class="card glass-effect">
+                            <div class="card-icon income"><i class="fa-solid fa-arrow-trend-up"></i></div>
+                            <div class="card-info">
+                                <h3>Dinheiro em Caixa (Estimado)</h3>
+                                <p class="amount positive" id="dash-cash-flow">R$ 0,00</p>
+                            </div>
+                        </div>
+                        <div class="card glass-effect">
+                            <div class="card-icon expense"><i class="fa-solid fa-credit-card"></i></div>
+                            <div class="card-info">
+                                <h3>Fatura Atual (Cartão)</h3>
+                                <p class="amount negative" id="dash-credit-current">R$ 0,00</p>
+                            </div>
+                        </div>
+                        <div class="card glass-effect">
+                            <div class="card-icon neutral"><i class="fa-solid fa-users"></i></div>
+                            <div class="card-info">
+                                <h3>Seu Saldo Restante a Pagar</h3>
+                                <p class="amount neutral-color" id="dash-split-balance">R$ 0,00</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-widgets">
+                        <div class="widget glass-effect">
+                            <h3>Resumo de Cartões</h3>
+                            <div id="dash-cards-summary" class="widget-content placeholder">
+                                Nenhum cartão cadastrado.
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="credit-cards" class="module">
+                    <div class="module-header glass-effect p-4 mb-4"
+                        style="padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem;">
+                        <h2>Gerenciamento de Cartões</h2>
+                        <button id="btn-new-card" class="btn btn-primary" style="margin-top: 10px;"><i
+                                class="fa-solid fa-plus"></i> Novo Cartão</button>
+                    </div>
+
+                    <div class="cards-grid" id="cards-list">
+                        <!-- Rendered cards will go here -->
+                        <div class="generic-message text-secondary">Nenhum cartão cadastrado.</div>
+                    </div>
+
+                    <div class="module-section" style="margin-top: 2rem;">
+                        <div class="flex-between"
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h3>Lançamentos na Fatura</h3>
+                            <button id="btn-add-credit-expense" class="btn btn-secondary"><i
+                                    class="fa-solid fa-plus"></i> Lançar Despesa</button>
+                        </div>
+                        <div class="table-container glass-effect">
+                            <table class="data-table" id="table-credit-transactions">
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Cartão</th>
+                                        <th>Descrição</th>
+                                        <th>Parcela</th>
+                                        <th>Valor</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="5" style="text-align:center;" class="text-secondary">Nenhum
+                                            lançamento.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="cash-flow" class="module">
+                    <div class="module-header glass-effect p-4 mb-4"
+                        style="padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
+                        <h2>Movimentação de Caixa</h2>
+                        <button id="btn-add-cash-flow" class="btn btn-primary"><i
+                                class="fa-solid fa-money-bill-transfer"></i> Nova Movimentação</button>
+                    </div>
+
+                    <div class="table-container glass-effect">
+                        <table class="data-table" id="table-cash-flow">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Origem / Destino</th>
+                                    <th>Descrição</th>
+                                    <th>Tipo</th>
+                                    <th>Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="5" style="text-align:center;" class="text-secondary">Nenhuma
+                                        movimentação.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section id="expenses-split" class="module">
+                    <div class="module-header glass-effect"
+                        style="padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
+                        <h2>Divisão de Despesas</h2>
+                        <button id="btn-add-split" class="btn btn-primary"><i class="fa-solid fa-users"></i> Registrar
+                            Conta Paga</button>
+                    </div>
+
+                    <div class="widget glass-effect mb-4" style="margin-bottom: 2rem;">
+                        <h3>Saldos a Compensar</h3>
+                        <div id="split-balances" class="flex-row gap-2"
+                            style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                            <div class="text-secondary">Calculando...</div>
+                        </div>
+                    </div>
+
+                    <div class="table-container glass-effect">
+                        <table class="data-table" id="table-split-flow">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Quem Pagou</th>
+                                    <th>Descrição / Motivo</th>
+                                    <th>Valor Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="4" style="text-align:center;" class="text-secondary">Nenhum rateio.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals Background -->
+    <div id="modal-backdrop" class="modal-backdrop"></div>
+
+    <!-- Modal Form: Novo Cartão -->
+    <div id="modal-card" class="modal glass-effect">
+        <div class="modal-header">
+            <h3>Adicionar Cartão de Crédito</h3>
+            <button class="btn-close-modal"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form id="form-card">
+            <div class="form-group">
+                <label>Nome do Cartão (ex: BB, Nubank)</label>
+                <input type="text" id="card-name" required class="input-modern" placeholder="Digite o nome do cartão">
+            </div>
+            <div class="form-row" style="display:flex; gap:10px;">
+                <div class="form-group" style="flex:1;">
+                    <label>Dia do Fechamento</label>
+                    <input type="number" id="card-closing" min="1" max="31" required class="input-modern">
+                </div>
+                <div class="form-group" style="flex:1;">
+                    <label>Dia do Vencimento</label>
+                    <input type="number" id="card-due" min="1" max="31" required class="input-modern">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Limite Total (R$)</label>
+                <input type="number" step="0.01" id="card-limit" class="input-modern" placeholder="0.00">
+            </div>
+            <div class="form-actions" style="margin-top:20px; text-align:right;">
+                <button type="button" class="btn btn-secondary btn-close-modal">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Salvar Cartão</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Modal Form: Nova Movimentação Caixa -->
+    <div id="modal-cash" class="modal glass-effect">
+        <div class="modal-header">
+            <h3>Movimentação de Caixa</h3>
+            <button class="btn-close-modal"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form id="form-cash">
+            <div class="form-group">
+                <label>Data</label>
+                <input type="date" id="cash-date" required class="input-modern">
+            </div>
+            <div class="form-group">
+                <label>Origem / Destino (ex: Dona Ana, Corretor)</label>
+                <input type="text" id="cash-origin" required class="input-modern">
+            </div>
+            <div class="form-group">
+                <label>Descrição</label>
+                <input type="text" id="cash-desc" required class="input-modern">
+            </div>
+            <div class="form-group">
+                <label>Valor (R$)</label>
+                <p class="text-sm text-secondary" style="font-size:12px; margin-bottom:5px;">(Use valor negativo para
+                    saídas/despesas)</p>
+                <input type="number" step="0.01" id="cash-amount" required class="input-modern"
+                    placeholder="-150.00 ou 500.00">
+            </div>
+            <div class="form-actions" style="margin-top:20px; text-align:right;">
+                <button type="button" class="btn btn-secondary btn-close-modal">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Salvar Movimentação</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Modal Form: Nova Despesa Cartão -->
+    <div id="modal-credit-expense" class="modal glass-effect">
+        <div class="modal-header">
+            <h3>Lançar Despesa no Cartão</h3>
+            <button class="btn-close-modal"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form id="form-credit-expense">
+            <div class="form-group">
+                <label>Cartão de Crédito</label>
+                <select id="expense-card-id" required class="input-modern">
+                    <option value="">Selecione um cartão...</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Data da Compra</label>
+                <input type="date" id="expense-date" required class="input-modern">
+            </div>
+            <div class="form-group">
+                <label>Descrição</label>
+                <input type="text" id="expense-desc" required class="input-modern">
+            </div>
+            <div class="form-row" style="display:flex; gap:10px;">
+                <div class="form-group" style="flex:1;">
+                    <label>Valor Total (R$)</label>
+                    <input type="number" step="0.01" id="expense-amount" required class="input-modern"
+                        placeholder="Ex: 1200.00">
+                </div>
+                <div class="form-group" style="flex:1;">
+                    <label>Qtd. Parcelas</label>
+                    <input type="number" id="expense-installments" min="1" value="1" required class="input-modern">
+                </div>
+            </div>
+            <div class="form-actions" style="margin-top:20px; text-align:right;">
+                <button type="button" class="btn btn-secondary btn-close-modal">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Lançar Despesa</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Modal Form: Divisão de Despesas -->
+    <div id="modal-split" class="modal glass-effect">
+        <div class="modal-header">
+            <h3>Registrar Conta Paga (Rateio)</h3>
+            <button class="btn-close-modal"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form id="form-split">
+            <div class="form-group">
+                <label>Quem pagou a conta?</label>
+                <select id="split-payer" required class="input-modern">
+                    <option value="Lucas">Lucas</option>
+                    <option value="Ivson">Ivson</option>
+                    <option value="Artur">Artur</option>
+                    <option value="Duva">Duva</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Descrição / Motivo</label>
+                <input type="text" id="split-desc" required class="input-modern">
+            </div>
+            <div class="form-group">
+                <label>Valor Total Pago (R$)</label>
+                <input type="number" step="0.01" id="split-amount" required class="input-modern">
+            </div>
+            <div class="form-group" style="margin-top: 15px;">
+                <label style="margin-bottom: 10px;">Quem participou da despesa? (Será dividido por igual)</label>
+                <div style="display:flex; gap: 15px; flex-wrap: wrap;">
+                    <label style="display:flex; align-items:center; gap:5px;"><input type="checkbox"
+                            name="split-participants" value="Lucas" checked> Lucas</label>
+                    <label style="display:flex; align-items:center; gap:5px;"><input type="checkbox"
+                            name="split-participants" value="Ivson" checked> Ivson</label>
+                    <label style="display:flex; align-items:center; gap:5px;"><input type="checkbox"
+                            name="split-participants" value="Artur" checked> Artur</label>
+                    <label style="display:flex; align-items:center; gap:5px;"><input type="checkbox"
+                            name="split-participants" value="Duva" checked> Duva</label>
+                </div>
+            </div>
+            <div class="form-actions" style="margin-top:20px; text-align:right;">
+                <button type="button" class="btn btn-secondary btn-close-modal">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Registrar Rateio</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Scripts -->
+    <script src="store.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
