@@ -145,10 +145,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = Store.getData();
         const totalAmount = parseFloat(document.getElementById('expense-amount').value);
         const installments = parseInt(document.getElementById('expense-installments').value);
+        const cardId = document.getElementById('expense-card-id').value;
+
+        if (!cardId) {
+            alert("Por favor, selecione um cartão válido para lançar a despesa.");
+            return;
+        }
 
         data.creditPurchases.push({
             id: Store.generateId(),
-            cardId: document.getElementById('expense-card-id').value,
+            cardId: cardId,
             date: document.getElementById('expense-date').value,
             description: document.getElementById('expense-desc').value,
             currentInstallment: 1, // Start at 1
@@ -274,6 +280,22 @@ function renderBudgets() {
     const fixed = activeBudgets.filter(b => b.type === 'FIXED');
     const variable = activeBudgets.filter(b => b.type === 'VARIABLE');
 
+    // MÁGICA: Buscar faturas ativas para injetar nas Variáveis
+    const cartoesFaturas = [];
+    data.creditCards.forEach(card => {
+        const purchases = data.creditPurchases.filter(p => !p.isArchived && p.cardId === card.id);
+        let debitoRemanescenteTotal = 0;
+        purchases.forEach(p => {
+            const debitoTotal = (p.totalInstallments - p.currentInstallment + 1) * p.installmentAmount;
+            const debitoRemanescente = debitoTotal - p.installmentAmount;
+            debitoRemanescenteTotal += debitoRemanescente;
+        });
+        const faturaAtual = card.utilizedLimit - debitoRemanescenteTotal;
+        if (faturaAtual > 0) {
+            cartoesFaturas.push({ id: card.id, name: card.name, amount: faturaAtual });
+        }
+    });
+
     if (fixed.length === 0) {
         tFixed.innerHTML = '<tr><td colspan="3" style="text-align:center;" class="text-secondary">Nenhuma despesa fixa.</td></tr>';
     } else {
@@ -290,9 +312,10 @@ function renderBudgets() {
         });
     }
 
-    if (variable.length === 0) {
+    if (variable.length === 0 && cartoesFaturas.length === 0) {
         tVar.innerHTML = '<tr><td colspan="4" style="text-align:center;" class="text-secondary">Nenhuma despesa variável.</td></tr>';
     } else {
+        // Render Variáveis manuais
         variable.forEach(item => {
             tVar.innerHTML += `
                 <tr>
@@ -301,6 +324,20 @@ function renderBudgets() {
                     <td style="font-weight: 600; color:var(--negative)">${Store.formatCurrency(item.amount)}</td>
                     <td>
                         <button class="btn btn-primary" style="padding: 5px 10px; font-size: 0.8rem;" onclick="archiveBudget('${item.id}')">Efetivar</button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        // Render Faturas de Cartão (Automático)
+        cartoesFaturas.forEach(c => {
+            tVar.innerHTML += `
+                <tr style="background: rgba(43, 88, 118, 0.1);">
+                    <td><span class="badge" style="background: var(--accent); color: white;">Sistema Automático</span></td>
+                    <td><strong>Fatura Cartão: ${c.name}</strong> <br><small class="text-secondary" style="font-size:0.75rem;">(Limite Util. - Débitos Restantes)</small></td>
+                    <td style="font-weight: 600; color:var(--negative)">${Store.formatCurrency(c.amount)}</td>
+                    <td>
+                        <button class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.8rem;" disabled title="Faturas fecham e efetivam de acordo com os lançamentos na aba de cartões">Auto</button>
                     </td>
                 </tr>
             `;
