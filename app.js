@@ -229,6 +229,46 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    window.updateBudgetAmount = function (id) {
+        const data = Store.getData();
+        const budget = data.budgets.find(b => b.id === id);
+        if (budget) {
+            const nextAmount = prompt(`Atualizar o saldo restante de ${budget.description}:`, budget.amount);
+            if (nextAmount !== null) {
+                budget.amount = parseFloat(nextAmount);
+                Store.saveData(data);
+                refreshAll();
+            }
+        }
+    };
+
+    window.editInstallment = function (id) {
+        const data = Store.getData();
+        const purchase = data.creditPurchases.find(p => p.id === id);
+        if (purchase) {
+            const nextInstallment = prompt(`Em qual parcela você está pagando atualmente? (De 1 até ${purchase.totalInstallments}):`, purchase.currentInstallment);
+            if (nextInstallment !== null) {
+                const parsed = parseInt(nextInstallment);
+                if (parsed > 0 && parsed <= purchase.totalInstallments) {
+                    purchase.currentInstallment = parsed;
+                    Store.saveData(data);
+                    refreshAll();
+                } else {
+                    alert('Número de parcela inválido.');
+                }
+            }
+        }
+    };
+
+    window.deleteCreditPurchase = function (id) {
+        if (confirm('Atenção: Tem certeza que deseja excluir esta despesa do cartão permanentemente?')) {
+            const data = Store.getData();
+            data.creditPurchases = data.creditPurchases.filter(p => p.id !== id);
+            Store.saveData(data);
+            refreshAll();
+        }
+    };
+
     refreshAll();
 });
 
@@ -303,7 +343,9 @@ function renderBudgets() {
             tFixed.innerHTML += `
                 <tr>
                     <td><strong>${item.description}</strong></td>
-                    <td style="font-weight: 600; color:var(--negative)">${Store.formatCurrency(item.amount)}</td>
+                    <td style="font-weight: 600; color:var(--negative)">
+                        <span style="cursor:pointer;" title="Editar Valor" onclick="updateBudgetAmount('${item.id}')">${Store.formatCurrency(item.amount)} <i class="fa-solid fa-pen" style="font-size:0.75em;"></i></span>
+                    </td>
                     <td>
                         <button class="btn btn-primary" style="padding: 5px 10px; font-size: 0.8rem;" onclick="archiveBudget('${item.id}')">Efetivar</button>
                     </td>
@@ -321,7 +363,9 @@ function renderBudgets() {
                 <tr>
                     <td><span class="badge" style="background: rgba(255,255,255,0.1); color: var(--text-primary);">${item.category}</span></td>
                     <td><strong>${item.description}</strong></td>
-                    <td style="font-weight: 600; color:var(--negative)">${Store.formatCurrency(item.amount)}</td>
+                    <td style="font-weight: 600; color:var(--negative)">
+                        <span style="cursor:pointer;" title="Editar Valor Restante" onclick="updateBudgetAmount('${item.id}')">${Store.formatCurrency(item.amount)} <i class="fa-solid fa-pen" style="font-size:0.75em;"></i></span>
+                    </td>
                     <td>
                         <button class="btn btn-primary" style="padding: 5px 10px; font-size: 0.8rem;" onclick="archiveBudget('${item.id}')">Efetivar</button>
                     </td>
@@ -380,11 +424,14 @@ function renderCards() {
                     <td>${dateStr}</td>
                     <td><span class="badge" style="background: rgba(255,255,255,0.1); color: var(--text-primary);">${card.name}</span></td>
                     <td>${p.description}</td>
-                    <td>${p.currentInstallment}/${p.totalInstallments} (${Store.formatCurrency(p.installmentAmount)})</td>
+                    <td><span style="cursor:pointer; text-decoration:underline;" title="Editar Parcela Atual" onclick="editInstallment('${p.id}')">${p.currentInstallment}/${p.totalInstallments} <i class="fa-solid fa-pen" style="font-size:0.75em;"></i></span> <br><small class="text-secondary">${Store.formatCurrency(p.installmentAmount)}</small></td>
                     <td><span style="font-size: 0.85em; color: var(--text-secondary);">Total: ${Store.formatCurrency(debitoTotal)}</span><br><strong style="color:var(--negative)">Rem: ${Store.formatCurrency(debitoRemanescente)}</strong></td>
-                    <td>
-                        <button class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.8rem;" onclick="payInstallment('${p.id}')">
-                            <i class="fa-solid fa-check"></i> Pagar Parcela
+                    <td style="display:flex; gap: 5px; flex-wrap:wrap; align-items:center;">
+                        <button class="btn btn-secondary" style="padding: 5px 8px; font-size: 0.8rem;" onclick="payInstallment('${p.id}')" title="Avançar uma parcela">
+                            <i class="fa-solid fa-check"></i>
+                        </button>
+                        <button class="btn btn-secondary" style="padding: 5px 8px; font-size: 0.8rem; border-color:var(--negative); color:var(--negative);" onclick="deleteCreditPurchase('${p.id}')" title="Excluir Lançamento">
+                            <i class="fa-solid fa-trash"></i>
                         </button>
                     </td>
                 </tr>
